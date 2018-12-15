@@ -198,13 +198,101 @@ register="false"/>
 
 ### 负载均衡
 
+**扩展说明**
 
+> 从多个服务提供者中选择一个进行调用
+
+**扩展机制**
+
+1. Random LoadBalance
+
+   > 随机，按权重设置随机概率
+   >
+   > 在一个截面上碰撞的概率高，但调用量越大分布越均匀，而且按概率使用权重后也比较均匀，有利于动态调整提供者权重;(权重可以在dubbo管控台配置)
+
+2. **RoundRobin LoadBalance**
+
+   > 轮循，按公约后的权重设置轮循比率
+   >
+   > 存在慢的提供者累积请求问题，比如：第二台机器很慢，但没挂，当请求调到第二台时就卡在那，久而久之，所有请求都卡在调到第二台上
+
+3. **LeastActive LoadBalance**
+
+   > 最少活跃调用数，相同活跃数的随机，活跃数指调用前后计数差
+   >
+   > 使慢的提供者收到更少请求，因为越慢的提供者的调用前后计数差会越大
+
+4. **ConsistentHash LoadBalance**
+
+   > 一致性Hash，相同参数的请求总是发到同一提供者
+   >
+   > 当某一台提供者挂时，原本发往该提供者的请求，基于虚拟节点，平摊到其它提供者，不会引起剧烈变动
+   >
+   > 算法参见：http://en.wikipedia.org/wiki/Consistent_hashing
+   >
+   > 缺省只对第一个参数Hash，如果要修改，请配置
+   >
+   > ```xml
+   > <dubbo:parameter key="hash.arguments" value="0,1" />
+   > ```
+   >
+   > 缺省用160份虚拟节点，如果要修改，请配置
+   >
+   > ```xml
+   > <dubbo:parameter key="hash.nodes" value="320" />
+   > ```
+
+### 连接超时timeout
+
+**超时机制**
+
+由于网络或服务端不可靠，会导致调用出现一种不确定的中间状态（超时）。为了避免超时导致客户端资源（线程）挂起耗尽，`必须设置超时时间`
+
+> Provider可以配置的Consumer端主要属性有timeout、retries、loadbalance、actives和cluster。Provider上应尽量多配置些Consumer端的属性，让Provider实现者一开始就思考Provider的服务特点与服务质量。配置之间存在着覆盖，具体规则如下：
+>
+> - 方法级配置别优于接口级别，即小Scope优先
+> - Consumer端配置优于Provider配置，优于全局配置
+> - Dubbo Hard Code的配置值（**默认**）
+>
+> 根据规则2，纵使消费端配置优于服务端配置，但消费端配置超时时间不能随心所欲，需要根据业务实际情况来设定。如果超时时间设置得太短，复杂业务本来就需要很长时间完成，服务端无法在设定的超时时间内完成业务处理；如果超时时间设置太长，会由于服务端或者网络问题导致客户端资源大量线程挂起
+
+在dubbo的provider和consumer的配置文件中，如果都配置了timeout的超时时间，<font color="#FF0000">dubbo默认以consumer中配置的时间为准</font>
+
+**超时配置**
+
+```xml
+<!-- Dubbo消费端  全局超时配置 -->
+<dubbo:consumer timeout="5000" />
+```
+
+```xml
+<!--指定接口以及特定方法超时配置-->
+<dubbo:reference interface="com.foo.BarService" timeout="2000">
+    <dubbo:method name="sayHello" timeout="3000" />
+</dubbo:reference>
+```
+
+```xml
+<!-- Dubbo服务端  全局超时配置 -->
+<dubbo:provider timeout="5000" />
+```
+
+```xml
+<!--指定接口以及特定方法超时配置-->
+<dubbo:provider interface="com.foo.BarService" timeout="2000">
+    <dubbo:method name="sayHello" timeout="3000" />
+</dubbo:provider>
+```
 
 ### 问题
 
 #### spi是什么？
 
+框架或组件通常有两类客户，一个是使用者，一个是扩展者。API (Application Programming Interface) 是给使用者用的，而 SPI (Service Provide Interface) 是给扩展者用的。在设计时，尽量把它们隔离开，而不要混在一起
+
 #### dubbo的扩展机制
+
+TODO
 
 #### 为什么dubbo相关的配置文件要放在META-INF/spring包下？
 

@@ -8,6 +8,24 @@ zookeeper是一个开源的分布式协调服务，是由雅虎创建的，基�
 
 <font color="#FF0000">**zookeeper并不是用来存储数据的，通过监控数据状态的变化，达到基于数据的集群管理**</font>
 
+![zookeeper注册中心存储结构图](http://dubbo.apache.org/docs/zh-cn/user/sources/images/zookeeper.jpg)
+
+**流程说明：**
+
+- 服务提供者启动时: 向 `/dubbo/com.foo.BarService/providers` 目录下写入自己的 URL 地址
+- 服务消费者启动时: 订阅 `/dubbo/com.foo.BarService/providers` 目录下的提供者 URL 地址。并向 `/dubbo/com.foo.BarService/consumers` 目录下写入自己的 URL 地址
+- 监控中心启动时: 订阅 `/dubbo/com.foo.BarService` 目录下的所有提供者和消费者 URL 地址
+
+**支持以下功能：**
+
+- 当提供者出现断电等异常停机时，注册中心能自动删除提供者信息
+- 当注册中心重启时，能自动恢复注册数据，以及订阅请求
+- 当会话过期时，能自动恢复注册数据，以及订阅请求
+- 当设置 `<dubbo:registry check="false" />` 时，记录失败注册和订阅请求，后台定时重试
+- 可通过 `<dubbo:registry username="admin" password="1234" />` 设置 zookeeper 登录信息
+- 可通过 `<dubbo:registry group="dubbo" />` 设置 zookeeper 的根节点，不设置将使用无根树
+- 支持 `*` 号通配符 `<dubbo:reference group="*" version="*" />`，可订阅服务的所有分组和所有版本的提供者
+
 ### 特性
 
 **顺序一致性**
@@ -614,3 +632,4 @@ RetryUnitilElapsed 一直重试直到规定的时间
 1. https://blog.csdn.net/gaoshan12345678910/article/details/67638657
 2. https://blog.csdn.net/zh15732621679/article/details/80723358
 3. 沽泡学院MIC老师讲解
+4. http://dubbo.io
